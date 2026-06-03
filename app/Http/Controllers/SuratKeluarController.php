@@ -320,22 +320,22 @@ class SuratKeluarController extends Controller
             SKTM
             SKD
         */
-
         // TEMPLATE
-        $template = match ($kodeSurat) {
+$template = match ($kodeSurat) {
 
-            'sku'
-                => 'admin.surat-keluar.sku',
+    'sku'
+        => 'admin.surat-keluar.template-sku', // Diubah dari .sku
 
-            'sktm'
-                => 'admin.surat-keluar.sktm',
+    'sktm'
+        => 'admin.surat-keluar.template-sktm', // Diubah dari .sktm
 
-            'skd'
-                => 'admin.surat-keluar.skd',
+    'skd'
+        => 'admin.surat-keluar.template-skd', // Diubah dari .skd
+        
 
-            default
-                => 'admin.surat-keluar.template-default',
-        };
+    default
+        => 'admin.surat-keluar.template-default',
+};
 
         $data = [
 
