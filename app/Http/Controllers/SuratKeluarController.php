@@ -90,16 +90,13 @@ class SuratKeluarController extends Controller
         $pdf = $this->generatePDF($suratKeluar);
 
         // 3. KONSEP PENYIMPANAN YANG DISAMAKAN
-        // Bikin nama file unik & path mengarah ke folder surat_keluar di dalam disk public
         $fileName = 'surat_' . $suratKeluar->id . '.pdf';
         $pdfPath = 'surat_keluar/' . $fileName;
 
-        // Pastikan directory 'surat_keluar' udah otomatis dibuat kalau belum ada
         if (!Storage::disk('public')->exists('surat_keluar')) {
             Storage::disk('public')->makeDirectory('surat_keluar');
         }
 
-        // Simpan file pdf hasil render ke disk public railway
         Storage::disk('public')->put($pdfPath, $pdf->output());
 
         // 4. UPDATE FILE PATH DI DATABASE
@@ -159,10 +156,11 @@ class SuratKeluarController extends Controller
         $suratKeluar->load(['pengajuan.user', 'pengajuan.kategori', 'pejabat']);
         $kodeSurat = strtolower($suratKeluar->pengajuan->kategori->kode_surat);
 
+        // DISESUAIKAN DENGAN NAMA FILE FISIK DI GITHUB LU
         $template = match ($kodeSurat) {
             'sku'   => 'admin.surat-keluar.template-sku',
             'sktm'  => 'admin.surat-keluar.template-sktm',
-            'skd'   => 'admin.surat-keluar.template-skd',
+            'skd'   => 'admin.surat-keluar.template-domisili', // <--- INI DIA BIANG KEROKNYA!
             default => 'admin.surat-keluar.template-default',
         };
 
@@ -182,10 +180,11 @@ class SuratKeluarController extends Controller
         $suratKeluar = SuratKeluar::with(['pengajuan.user', 'pengajuan.kategori', 'pejabat'])->findOrFail($id);
         $kodeSurat = strtolower($suratKeluar->pengajuan->kategori->kode_surat);
 
+        // DISESUAIKAN JUGA DI SINI BIAR KONSISTEN
         $template = match ($kodeSurat) {
             'sku'   => 'admin.surat-keluar.template-sku',
             'sktm'  => 'admin.surat-keluar.template-sktm',
-            'skd'   => 'admin.surat-keluar.template-skd',
+            'skd'   => 'admin.surat-keluar.template-domisili', // <--- DI SINI JUGA SAMA!
             default => 'admin.surat-keluar.template-default',
         };
 
