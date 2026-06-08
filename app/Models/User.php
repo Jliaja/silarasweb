@@ -11,6 +11,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Atribut yang bisa diisi secara Mass Assignment.
+     * Sudah dibersihkan dari spasi gaib brok!
+     */
     protected $fillable = [
         'name',
         'nik',
@@ -26,16 +30,23 @@ class User extends Authenticatable
         'role',
     ];
 
+    /**
+     * Atribut yang disembunyikan dari serialisasi JSON.
+     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
+    /**
+     * 💡 FIX UTAMA: Casting tipe data field agar sinkron otomatis ke MariaDB
+     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
+            'tgl_lahir'         => 'date', // Paksa tipe teks dari form HTML diconvert jadi format DATE MariaDB asli!
         ];
     }
 }

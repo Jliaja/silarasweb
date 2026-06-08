@@ -1,4 +1,8 @@
 <?php
+
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\KategoriSuratController;
 use App\Http\Controllers\PejabatController;
@@ -10,36 +14,40 @@ use App\Http\Controllers\RiwayatWargaController;
 use App\Http\Controllers\ProfileAdminController;
 use App\Http\Controllers\ProfileWargaController;
 use App\Http\Controllers\DownloadController;
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Response;
-use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\AccountController; // 💡 UTAMA: Controller andalan lu!
 
-Route::get('/cek-surat', function () {
-
-    $path = 'surat_keluar/surat_2.pdf';
-
-    return response()->json([
-        'exists' => Storage::disk('public')->exists($path),
-        'full_path' => storage_path('app/public/' . $path),
-    ]);
-});
 /*
 |--------------------------------------------------------------------------
-| ROOT → LANGSUNG KE LOGIN
+| ROOT & UTILITY ROUTES
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
     return redirect()->route('login');
 });
 
+Route::get('/cek-surat', function () {
+    $path = 'surat_keluar/surat_2.pdf';
+    return response()->json([
+        'exists' => Storage::disk('public')->exists($path),
+        'full_path' => storage_path('app/public/' . $path),
+    ]);
+});
+
 /*
 |--------------------------------------------------------------------------
-| ROUTE ADMIN
+| GUEST ROUTES - PROSES RECOVERY & REGISTRASI (DI LUAR MIDDLEWARE AUTH)
+|--------------------------------------------------------------------------
+*/
+Route::post('/check-email', [AccountController::class, 'checkEmail']);
+Route::post('/direct-reset-password', [AccountController::class, 'directResetPassword']);
+Route::post('/register', [AccountController::class, 'register'])->middleware('guest');
+
+/*
+|--------------------------------------------------------------------------
+| ROUTE GROUP - ADMIN (WEB SESSION)
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
-
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('admin.dashboard');
 
     Route::resource('kategori', KategoriSuratController::class)->names('admin.kategori');
@@ -64,63 +72,79 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE WARGA
+| ROUTE GROUP - WARGA (MURNI AREA SETELAH LOGIN)
 |--------------------------------------------------------------------------
 */
 Route::prefix('warga')->middleware(['auth', 'role:warga'])->group(function () {
+    
+    // 1. Dashboard Utama (Nembak langsung ke view dashboard modern lu)
+    Route::get('/dashboard', function () {
+        return view('warga.dashboard'); 
+    })->name('warga.dashboard');
 
-    Route::view('/dashboard', 'warga.dashboard')->name('warga.dashboard');
-    Route::view('/informasi', 'warga.informasi')->name('warga.informasi');
-
-    // Route::get('/download/template-pengantar', [DownloadController::class, 'downloadTemplatePengantar'])->name('warga.download-template-pengantar');
-
+    // 2. Rute Riwayat (Tabel arsip data pengajuan berkas)
+    Route::get('/dashboard', [RiwayatWargaController::class, 'dashboard'])->name('warga.dashboard');
     Route::get('/riwayat', [RiwayatWargaController::class, 'index'])->name('warga.riwayat');
 
+    // 3. Rute Pengajuan (Formulir surat & timeline pelacakan berkas)
     Route::get('/pengajuan/create', [PengajuanWargaController::class, 'create'])->name('warga.pengajuan.create');
+    
+    // 💡 FIX SAKTI: Kata "Push" ghaib di baris ini udah dibabat habis brok!
     Route::post('/pengajuan', [PengajuanWargaController::class, 'store'])->name('warga.pengajuan.store');
+    
     Route::get('/pengajuan/{id}', [PengajuanWargaController::class, 'show'])->name('warga.pengajuan.show');
     Route::get('/pengajuan/{id}/download', [PengajuanWargaController::class, 'download'])->name('warga.pengajuan.download');
 
+    // 4. ⚙️ MANAJEMEN PROFILE WARGA (Sinkron ke profile/edit.blade.php)
     Route::get('/profile/edit', [ProfileWargaController::class, 'edit'])->name('warga.profile.edit');
-    Route::put('/profile/update', [ProfileWargaController::class, 'update'])->name('warga.profile.update');
+    Route::patch('/profile/update', [ProfileWargaController::class, 'update'])->name('profile.update');
+    Route::post('/change-password', [AccountController::class, 'changePassword'])->name('warga.password.update');
+    Route::delete('/profile/destroy', [ProfileWargaController::class, 'destroy'])->name('profile.destroy');
+
+    // Utilitas Tambahan
+    Route::view('/informasi', 'wargav2.dashboard')->name('warga.informasi'); 
 });
 
 /*
 |--------------------------------------------------------------------------
-| REDIRECT DASHBOARD SESUAI ROLE
+| GLOBAL WEB AUTHENTICATION HELPERS
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->get('/dashboard', function () {
-    return Auth::user()->role === 'admin'
-        ? redirect()->route('admin.dashboard')
-        : redirect()->route('warga.dashboard');
-})->name('dashboard');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', function () {
+        return Auth::user()->role === 'admin'
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('warga.dashboard');
+    })->name('dashboard');
 
-/*
-|--------------------------------------------------------------------------
-| LOGOUT
-|--------------------------------------------------------------------------
-*/
+    Route::get('/kategori', function () {
+        return \App\Models\KategoriSurat::all();
+    });
+});
+
+// Logout Web
 Route::post('/logout', function () {
     Auth::logout();
     return redirect()->route('login');
 })->name('logout');
 
+// Streaming file fisik surat
 Route::get('/surat/{filename}', function ($filename) {
-
-    $path = storage_path(
-        'app/public/surat_keluar/' . $filename
-    );
-
+    $path = storage_path('app/public/surat_keluar/' . $filename);
     if (!file_exists($path)) {
         abort(404);
     }
-
     return response()->file($path);
 });
+
 /*
 |--------------------------------------------------------------------------
-| AUTH ROUTES
+| BREEZE / FORTIFY ROUTE FILE
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
+
+// OVERRIDE ROUTE GUEST: Paksa rute login bawaan auth.php biar nembak file wargav2/login.blade.php
+Route::get('/login', function () {
+    return view('wargav2.login');
+})->middleware('guest')->name('login');
