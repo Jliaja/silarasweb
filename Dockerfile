@@ -36,6 +36,5 @@ RUN php artisan route:clear
 RUN php artisan config:clear
 EXPOSE 8080
 RUN mkdir -p /app/storage/app/public
-# ... terus di bagian CMD, lu bikin link-nya dulu
-# Ganti CMD lu jadi ini:
-CMD ["frankenphp", "run", "--config", "/etc/caddy/Caddyfile"]
+# Ganti CMD lu jadi ini
+CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force && frankenphp run --config /etc/caddy/Caddyfile"]

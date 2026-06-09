@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Models\Pejabat;
 use App\Models\KategoriSurat;
 use App\Models\PenomoranSurat;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -15,185 +14,58 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // ================= ADMIN =================
-        User::firstOrCreate(
-
+        User::updateOrCreate(
+            ['email' => 'admin@example.com'],
             [
-                'email' =>
-                    'admin@example.com'
-            ],
-
-            [
-
-                'name' =>
-                    'Admin Desa',
-
-                'nik' =>
-                    '3201234567890002',
-
-                'password' =>
-                    Hash::make('12345678'),
-
-                'role' =>
-                    'admin',
-            ]
-        );
-
-        // ================= WARGA =================
-        User::firstOrCreate(
-
-            [
-                'email' =>
-                    'warga@example.com'
-            ],
-
-            [
-
-                'name' =>
-                    'Warga Demo',
-
-                'nik' =>
-                    '3201234567890003',
-
-                'password' =>
-                    Hash::make('12345678'),
-
-                'role' =>
-                    'warga',
-
-                'no_hp' =>
-                    '081234567890',
-
-                'alamat' =>
-                    'Jl. Raya Desa Sukamaju',
+                'name'     => 'Admin Desa',
+                'nik'      => '3201234567890002',
+                'password' => Hash::make('12345678'),
+                'role'     => 'admin',
             ]
         );
 
         // ================= PEJABAT =================
-        Pejabat::firstOrCreate(
-
-            [
-                'nip' =>
-                    '198812122010011001'
-            ],
-
-            [
-
-                'nama' =>
-                    'Budi Santoso',
-
-                'jabatan' =>
-                    'Kepala Desa',
-            ]
+        Pejabat::updateOrCreate(
+            ['nip' => '198812122010011001'],
+            ['nama' => 'Budi Santoso', 'jabatan' => 'Kepala Desa']
         );
 
-        Pejabat::firstOrCreate(
-
-            [
-                'nip' =>
-                    '198705102011012002'
-            ],
-
-            [
-
-                'nama' =>
-                    'Siti Aminah',
-
-                'jabatan' =>
-                    'Sekretaris Desa',
-            ]
+        Pejabat::updateOrCreate(
+            ['nip' => '198705102011012002'],
+            ['nama' => 'Siti Aminah', 'jabatan' => 'Sekretaris Desa']
         );
 
         // ================= KATEGORI =================
-        $sku =
-            KategoriSurat::firstOrCreate(
+        $kategoris = [
+            'SKU'  => 'Surat Keterangan Usaha',
+            'SKD'  => 'Surat Keterangan Domisili',
+            'SKTM' => 'Surat Keterangan Tidak Mampu',
+        ];
 
-            [
-                'kode_surat' =>
-                    'SKU'
-            ],
-
-            [
-                'nama_kategori' =>
-                    'Surat Keterangan Usaha',
-            ]
-        );
-
-        $domisili =
-            KategoriSurat::firstOrCreate(
-
-            [
-                'kode_surat' =>
-                    'SKD'
-            ],
-
-            [
-                'nama_kategori' =>
-                    'Surat Keterangan Domisili',
-            ]
-        );
-
-        $sktm =
-            KategoriSurat::firstOrCreate(
-
-            [
-                'kode_surat' =>
-                    'SKTM'
-            ],
-
-            [
-                'nama_kategori' =>
-                    'Surat Keterangan Tidak Mampu',
-            ]
-        );
-
+        $kategoriModels = [];
+        foreach ($kategoris as $kode => $nama) {
+            $kategoriModels[$kode] = KategoriSurat::updateOrCreate(
+                ['kode_surat' => $kode],
+                ['nama_kategori' => $nama]
+            );
+        }
 
         // ================= PENOMORAN =================
-        PenomoranSurat::firstOrCreate(
+        // Pake map biar gak repetitif
+        $penomoran = [
+            'SKU'  => ['nomor' => 12, 'format' => '470/{nomor}/SKU/{bulan}/{tahun}'],
+            'SKD'  => ['nomor' => 7,  'format' => '470/{nomor}/SKD/{bulan}/{tahun}'],
+            'SKTM' => ['nomor' => 3,  'format' => '470/{nomor}/SKTM/{bulan}/{tahun}'],
+        ];
 
-            [
-                'id_kategori' =>
-                    $sku->id
-            ],
-
-            [
-
-                'nomor_terakhir' => 12,
-
-                'format_nomor' =>
-                    '470/{nomor}/SKU/{bulan}/{tahun}',
-            ]
-        );
-
-        PenomoranSurat::firstOrCreate(
-
-            [
-                'id_kategori' =>
-                    $domisili->id
-            ],
-
-            [
-
-                'nomor_terakhir' => 7,
-
-                'format_nomor' =>
-                    '470/{nomor}/SKD/{bulan}/{tahun}',
-            ]
-        );
-
-        PenomoranSurat::firstOrCreate(
-
-            [
-                'id_kategori' =>
-                    $sktm->id
-            ],
-
-            [
-
-                'nomor_terakhir' => 3,
-
-                'format_nomor' =>
-                    '470/{nomor}/SKTM/{bulan}/{tahun}',
-            ]
-        );
+        foreach ($penomoran as $kode => $data) {
+            PenomoranSurat::updateOrCreate(
+                ['id_kategori' => $kategoriModels[$kode]->id],
+                [
+                    'nomor_terakhir' => $data['nomor'],
+                    'format_nomor'   => $data['format'],
+                ]
+            );
+        }
     }
 }
