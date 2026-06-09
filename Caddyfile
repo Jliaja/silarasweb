@@ -1,5 +1,11 @@
 :8080 {
     root * /app/public
+    
+    # FrankenPHP nerusin request ke index.php
     php_server
+    
+    # Kalau file/route nggak nemu, lempar ke index.php
+    try_files {path} {path}/ /index.php?{query}
+    
     file_server
 }

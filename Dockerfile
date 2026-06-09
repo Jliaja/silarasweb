@@ -34,4 +34,6 @@ RUN chmod -R 777 storage bootstrap/cache
 RUN php artisan storage:link || true
 
 EXPOSE 8080
-CMD ["frankenphp", "php-server", "--listen", "0.0.0.0:8080"]
+RUN mkdir -p /app/storage/app/public
+# ... terus di bagian CMD, lu bikin link-nya dulu
+CMD ["sh", "-c", "php artisan storage:link && frankenphp php-server --listen :8080"]
