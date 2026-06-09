@@ -15,20 +15,28 @@ use App\Http\Controllers\PengajuanWargaController;
 use App\Http\Controllers\RiwayatWargaController;
 use App\Http\Controllers\ProfileAdminController;
 use App\Http\Controllers\ProfileWargaController;
-use App\Http\Controllers\DownloadController;
-
 
 /*
 |--------------------------------------------------------------------------
-| ROOT & UTILITY ROUTES
+| ROOT & AUTHENTICATION ROUTES
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return redirect()->route('login');
-});
-Route::get('/login', function () {
-    return view('wargav2.login'); 
-})->middleware('guest')->name('login');
+Route::get('/', fn() => redirect()->route('login'));
+
+// Login
+Route::get('/login', fn() => view('wargav2.login'))->middleware('guest')->name('login');
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Register & Password (Mapping ke folder auth/...)
+Route::get('/register', fn() => view('auth.regis'))->middleware('guest')->name('register');
+Route::post('/register', [AccountController::class, 'register'])->middleware('guest');
+
+Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');
+Route::post('/check-email', [AccountController::class, 'checkEmail']);
+Route::post('/direct-reset-password', [AccountController::class, 'directResetPassword']);
+
+// Utility
 Route::get('/cek-surat', function () {
     $path = 'surat_keluar/surat_2.pdf';
     return response()->json([
@@ -37,20 +45,9 @@ Route::get('/cek-surat', function () {
     ]);
 });
 
-// Rute untuk nge-proses login (nembak ke AuthController lu)
-Route::post('/login', [AuthController::class, 'login']);
 /*
 |--------------------------------------------------------------------------
-| GUEST ROUTES - PROSES RECOVERY & REGISTRASI (DI LUAR MIDDLEWARE AUTH)
-|--------------------------------------------------------------------------
-*/
-Route::post('/check-email', [AccountController::class, 'checkEmail']);
-Route::post('/direct-reset-password', [AccountController::class, 'directResetPassword']);
-Route::post('/register', [AccountController::class, 'register'])->middleware('guest');
-
-/*
-|--------------------------------------------------------------------------
-| ROUTE GROUP - ADMIN (WEB SESSION)
+| ROUTE GROUP - ADMIN
 |--------------------------------------------------------------------------
 */
 Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
@@ -78,66 +75,38 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| ROUTE GROUP - WARGA (MURNI AREA SETELAH LOGIN)
+| ROUTE GROUP - WARGA
 |--------------------------------------------------------------------------
 */
 Route::prefix('warga')->middleware(['auth', 'role:warga'])->group(function () {
-
-    // 2. Rute Riwayat (Tabel arsip data pengajuan berkas)
     Route::get('/dashboard', [RiwayatWargaController::class, 'dashboard'])->name('warga.dashboard');
     Route::get('/riwayat', [RiwayatWargaController::class, 'index'])->name('warga.riwayat');
-
-    // 3. Rute Pengajuan (Formulir surat & timeline pelacakan berkas)
     Route::get('/pengajuan/create', [PengajuanWargaController::class, 'create'])->name('warga.pengajuan.create');
-    
-    // 💡 FIX SAKTI: Kata "Push" ghaib di baris ini udah dibabat habis brok!
     Route::post('/pengajuan', [PengajuanWargaController::class, 'store'])->name('warga.pengajuan.store');
-    
     Route::get('/pengajuan/{id}', [PengajuanWargaController::class, 'show'])->name('warga.pengajuan.show');
     Route::get('/pengajuan/{id}/download', [PengajuanWargaController::class, 'download'])->name('warga.pengajuan.download');
-
-    // 4. ⚙️ MANAJEMEN PROFILE WARGA (Sinkron ke profile/edit.blade.php)
     Route::get('/profile/edit', [ProfileWargaController::class, 'edit'])->name('warga.profile.edit');
     Route::patch('/profile/update', [ProfileWargaController::class, 'update'])->name('profile.update');
     Route::post('/change-password', [AccountController::class, 'changePassword'])->name('warga.password.update');
     Route::delete('/profile/destroy', [ProfileWargaController::class, 'destroy'])->name('profile.destroy');
-
-    // Utilitas Tambahan
     Route::view('/informasi', 'wargav2.dashboard')->name('warga.informasi'); 
 });
 
 /*
 |--------------------------------------------------------------------------
-| GLOBAL WEB AUTHENTICATION HELPERS
+| GLOBAL HELPERS
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
-        return Auth::user()->role === 'admin'
-            ? redirect()->route('admin.dashboard')
+        return Auth::user()->role === 'admin' 
+            ? redirect()->route('admin.dashboard') 
             : redirect()->route('warga.dashboard');
     })->name('dashboard');
-
-    Route::get('/kategori', function () {
-        return \App\Models\KategoriSurat::all();
-    });
 });
 
-// Logout Web
-Route::post('/logout', function () {
-    Auth::logout();
-    return redirect()->route('login');
-})->name('logout');
-
-// Streaming file fisik surat
 Route::get('/surat/{filename}', function ($filename) {
     $path = storage_path('app/public/surat_keluar/' . $filename);
-    if (!file_exists($path)) {
-        abort(404);
-    }
+    if (!file_exists($path)) abort(404);
     return response()->file($path);
-});
-
-Route::get('/debug-route', function() {
-    return "Route aman, Laravel jalan!";
 });
