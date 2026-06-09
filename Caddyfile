@@ -1,11 +1,9 @@
 :8080 {
     root * /app/public
     
-    # FrankenPHP nerusin request ke index.php
+    # FrankenPHP wajib pake directive ini buat jalanin Laravel
     php_server
     
-    # Kalau file/route nggak nemu, lempar ke index.php
+    # Kalau file nggak ketemu, lempar ke index.php (PENTING buat 404!)
     try_files {path} {path}/ /index.php?{query}
-    
-    file_server
 }

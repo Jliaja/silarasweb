@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\KategoriSuratController;
 use App\Http\Controllers\PejabatController;
@@ -14,7 +16,7 @@ use App\Http\Controllers\RiwayatWargaController;
 use App\Http\Controllers\ProfileAdminController;
 use App\Http\Controllers\ProfileWargaController;
 use App\Http\Controllers\DownloadController;
-use App\Http\Controllers\AccountController; // 💡 UTAMA: Controller andalan lu!
+
 
 /*
 |--------------------------------------------------------------------------
@@ -24,7 +26,9 @@ use App\Http\Controllers\AccountController; // 💡 UTAMA: Controller andalan lu
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
+Route::get('/login', function () {
+    return view('wargav2.login'); 
+})->middleware('guest')->name('login');
 Route::get('/cek-surat', function () {
     $path = 'surat_keluar/surat_2.pdf';
     return response()->json([
@@ -33,6 +37,8 @@ Route::get('/cek-surat', function () {
     ]);
 });
 
+// Rute untuk nge-proses login (nembak ke AuthController lu)
+Route::post('/login', [AuthController::class, 'login']);
 /*
 |--------------------------------------------------------------------------
 | GUEST ROUTES - PROSES RECOVERY & REGISTRASI (DI LUAR MIDDLEWARE AUTH)
@@ -76,11 +82,6 @@ Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::prefix('warga')->middleware(['auth', 'role:warga'])->group(function () {
-    
-    // 1. Dashboard Utama (Nembak langsung ke view dashboard modern lu)
-    Route::get('/dashboard', function () {
-        return view('warga.dashboard'); 
-    })->name('warga.dashboard');
 
     // 2. Rute Riwayat (Tabel arsip data pengajuan berkas)
     Route::get('/dashboard', [RiwayatWargaController::class, 'dashboard'])->name('warga.dashboard');
@@ -136,15 +137,3 @@ Route::get('/surat/{filename}', function ($filename) {
     }
     return response()->file($path);
 });
-
-/*
-|--------------------------------------------------------------------------
-| BREEZE / FORTIFY ROUTE FILE
-|--------------------------------------------------------------------------
-*/
-require __DIR__.'/auth.php';
-
-// OVERRIDE ROUTE GUEST: Paksa rute login bawaan auth.php biar nembak file wargav2/login.blade.php
-Route::get('/login', function () {
-    return view('wargav2.login');
-})->middleware('guest')->name('login');
