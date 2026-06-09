@@ -29,10 +29,14 @@ class AccountController extends Controller
             'pekerjaan'     => 'required',
             'password'      => 'required|min:6|confirmed', // Gua tambahin confirmed biar standar form web aman
         ], [
-            'nik.digits'   => 'NIK harus berupa 16 digit angka.',
-            'nik.unique'   => 'NIK sudah terdaftar.',
-            'email.unique' => 'Email sudah terdaftar.',
-        ]);
+            'nik.digits'         => 'NIK harus berupa 16 digit angka.',
+        'nik.unique'         => 'NIK sudah terdaftar.',
+        'email.unique'       => 'Email sudah terdaftar.',
+        'password.confirmed' => 'Konfirmasi password tidak cocok',
+        'password.min'       => 'Password minimal 6 karakter',
+        'no_hp.min'          => 'Nomor HP minimal 10 digit.',
+        'no_hp.max'          => 'Nomor HP maksimal 15 digit.',
+    ]);
 
         try {
             $user = User::create([
@@ -55,7 +59,7 @@ class AccountController extends Controller
             // Otomatis loginin user setelah register khas aplikasi web
             Auth::login($user);
 
-            return redirect()->route('warga.dashboard')->with('success', 'Register berhasil! Selamat datang brok.');
+            return redirect()->route('warga.dashboard')->with('success', 'Register berhasil! Selamat datang');
 
         } catch (\Throwable $e) {
             return redirect()->back()->withInput()->with('error', 'Gagal register: ' . $e->getMessage());
@@ -202,4 +206,5 @@ class AccountController extends Controller
             return redirect()->back()->with('error', 'Gagal eksekusi direct reset: ' . $e->getMessage());
         }
     }
+    
 }

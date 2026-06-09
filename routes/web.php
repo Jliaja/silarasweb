@@ -29,7 +29,7 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Register & Password (Mapping ke folder auth/...)
-Route::get('/register', fn() => view('auth.regis'))->middleware('guest')->name('register');
+Route::get('/register', fn() => view('auth.register'))->middleware('guest')->name('register');
 Route::post('/register', [AccountController::class, 'register'])->middleware('guest');
 
 Route::get('/forgot-password', fn() => view('auth.forgot-password'))->name('password.request');

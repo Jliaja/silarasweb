@@ -45,6 +45,10 @@
 
     {{-- ================= FORM KOTAK 1: UPDATE PROFILE INFORMATION ================= --}}
     <div class="card" style="background: white; border-radius: 20px; padding: 30px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.02); border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h3 style="color: #1e3a5f; font-size: 22px; font-weight: 700;">Form Pengajuan Surat</h3>
+        <a href="{{ route('warga.dashboard') }}" class="btn-back">← Kembali</a>
+    </div>
         <h3 class="card-title">Informasi Profil Warga</h3>
         <p class="card-subtitle">Perbarui data biodata akun dan alamat domisili terdaftar Anda sesuai KTP asli.</p>
         
@@ -155,4 +159,5 @@
         </form>
     </div>
 </div>
+
 @endsection
