@@ -32,7 +32,8 @@ RUN npm run build
 RUN chmod -R 777 storage bootstrap/cache
 
 RUN php artisan storage:link || true
-
+RUN php artisan route:clear
+RUN php artisan config:clear
 EXPOSE 8080
 RUN mkdir -p /app/storage/app/public
 # ... terus di bagian CMD, lu bikin link-nya dulu

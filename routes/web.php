@@ -137,3 +137,7 @@ Route::get('/surat/{filename}', function ($filename) {
     }
     return response()->file($path);
 });
+
+Route::get('/debug-route', function() {
+    return "Route aman, Laravel jalan!";
+});
